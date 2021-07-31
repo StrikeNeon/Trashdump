@@ -2,6 +2,8 @@
 *.sql
 *.dat
 *.txt
+*.mp4
+*.mp4.part
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
