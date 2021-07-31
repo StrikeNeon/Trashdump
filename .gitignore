@@ -4,6 +4,8 @@
 *.txt
 *.mp4
 *.mp4.part
+ffmpeg-4.4-full_build
+videos
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
