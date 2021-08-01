@@ -16,6 +16,25 @@ def quick_load(link: str):
     return filename
 
 
+def load_audio_only(link: str):
+    ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                    }],
+                'ffmpeg_location':"./ffmpeg-4.4-full_build/bin"
+                }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        res = ydl.extract_info(
+                    link, force_generic_extractor=ydl.params.get('force_generic_extractor', False))
+        ydl.download([link])
+        print(res.keys())
+        filename = f'{res.get("title")}.mp4'
+    return filename
+
+
 def quick_clip(link: str, start: int, end: int):
     ydl_opts = {}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
