@@ -6,7 +6,7 @@ from youtubesearchpython import CustomSearch, VideoSortOrder
 
 
 def quick_load(link: str):
-    ydl_opts = {}
+    ydl_opts = {'ffmpeg_location':"./ffmpeg-4.4-full_build/bin"}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         res = ydl.extract_info(
                     link, force_generic_extractor=ydl.params.get('force_generic_extractor', False))
