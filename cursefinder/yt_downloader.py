@@ -12,7 +12,6 @@ def quick_load(link: str, filename: str):
         res = ydl.extract_info(
                     link, force_generic_extractor=ydl.params.get('force_generic_extractor', False))
         ydl.download([link])
-        # print(res.keys())
         filename = f'{filename}.mp4'
     return filename
 
@@ -57,7 +56,7 @@ def quick_search(query):
             parsed_views = int(views.get("text").split(" ")[0].replace(",", "")) if views.get("text") != "No views" else -1
             results[value.get("link")] = {"id": value.get("id"), "title": value.get("title"), "views": parsed_views}
         except AttributeError:
-            pass
+            pass  # trips on streams
     return results
 
 
