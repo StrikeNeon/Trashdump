@@ -9,10 +9,13 @@ def quick_load(link: str, filename: str):
     ydl_opts = {'ffmpeg_location':"./ffmpeg-4.4-full_build/bin",
                 'outtmpl': path.join(path.join(getcwd(), "videos"), f'{filename}.mp4')}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        res = ydl.extract_info(
-                    link, force_generic_extractor=ydl.params.get('force_generic_extractor', False))
-        ydl.download([link])
-        filename = f'{filename}.mp4'
+        try:
+            res = ydl.extract_info(
+                        link, force_generic_extractor=ydl.params.get('force_generic_extractor', False))
+            ydl.download([link])
+            filename = f'{filename}.mp4'
+        except youtube_dl.utils.DownloadError:
+            return
     return filename
 
 
