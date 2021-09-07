@@ -1,6 +1,7 @@
 import os
 import cv2
 import concurrent.futures
+from time import sleep
 
 
 class ImageAugmentor:
@@ -36,15 +37,11 @@ class ImageAugmentor:
             augmented_images[f"{filename}_180"] = image_180
             augmented_images[f"{filename}_90CCW"] = image_90CCW
         if flip:
-            if rotate:
-                image_90CW_flipped = cv2.rotate(image_90CW, 1)
-                image_90CCW_flipped = cv2.rotate(image_90CCW, -1)
-                augmented_images[f"{filename}_90CW_flipped"] = image_90CW_flipped
-                augmented_images[f"{filename}_90CCW_flipped"] = image_90CCW_flipped
             image_hor = cv2.flip(base_image, 1)
             image_vert_hor = cv2.flip(base_image, -1)
             augmented_images[f"{filename}_hor"] = image_hor
-            augmented_images[f"{filename}_vert_hor"] = image_vert_hor
+            if not rotate:
+                augmented_images[f"{filename}_vert_hor"] = image_vert_hor
         for filename, image in augmented_images.items():
             if convert:
                 cv2.imwrite(
@@ -62,6 +59,7 @@ class ImageAugmentor:
                 )
                 augmented_images[filename] = fr"{self.sample_path}\augmented\{filename}{ext}"
                 print(fr"{self.sample_path}\augmented\{filename}{ext}")
+            sleep(0.3)
         return augmented_images
 
     def augment(self, convert=True, rotate=True, flip=True):
@@ -75,7 +73,7 @@ class ImageAugmentor:
             try:
                 data = future.result()
             except Exception as exc:
-                print(f"{image} generated an exception")
+                print(f"{image} generated an exception {exc}")
             else:
                 print(f"{image} rewritten path: {data}")
 
