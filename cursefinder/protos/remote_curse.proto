@@ -1,0 +1,25 @@
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_outer_classname = "RemoteCurseProto";
+option objc_class_prefix = "HLW";
+
+package remotecurse;
+
+// The greeting service definition.
+service HexMan {
+  // Sends a greeting
+  rpc CurseMe (CurseRequest) returns (stream CurseReply) {}
+}
+
+// The request message containing the user's name.
+message CurseRequest {
+  string keyword = 1;
+  int32 views = 2;
+}
+
+// The response message containing the greetings
+message CurseReply {
+  string filename = 1;
+}
