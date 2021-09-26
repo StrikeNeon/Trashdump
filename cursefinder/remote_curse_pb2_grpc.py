@@ -15,7 +15,7 @@ class HexManStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.CurseMe = channel.unary_stream(
+        self.CurseMe = channel.stream_stream(
                 '/remotecurse.HexMan/CurseMe',
                 request_serializer=remote__curse__pb2.CurseRequest.SerializeToString,
                 response_deserializer=remote__curse__pb2.CurseReply.FromString,

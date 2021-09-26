@@ -8,8 +8,14 @@ from ipwhois import IPWhois, exceptions
 import pprint
 import hashlib
 import base64
+
 import plotly.graph_objects as go
 
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import plotly
+from dash.dependencies import Input, Output
 
 class WireSharkManager():
 
@@ -98,35 +104,56 @@ class WireSharkManager():
             yield parsed_info
 
 
-shark = WireSharkManager()
-printer = pprint.PrettyPrinter(indent=1)
-
-lon_points = []
-lat_points = []
-
-for info in shark.get_loc(100):
-    print("location data")
-    info["data_hash"] = shark.make_hash_sha256(info)
-    printer.pprint(info)
-    lon_points.append(info.get("city_lon") if info.get("city_lon") else info.get("country_lon"))
-    lat_points.append(info.get("city_lat") if info.get("city_lat") else info.get("country_lat"))
-
-fig = go.Figure(go.Scattermapbox(
-    mode="markers",
-    lon=lon_points,
-    lat=lat_points,
-    marker={'size': 10}))
-
-fig.update_layout(
-    margin ={'l':0,'t':0,'b':0,'r':0},
-    mapbox = {
-        'center': {'lon': 10, 'lat': 10},
-        'style': "stamen-terrain",
-        'center': {'lon': -20, 'lat': -20},
-        'zoom': 1})
-
-fig.show()
-
 # nm = nmap.PortScanner()
 # result = nm.scan(hosts="", arguments='-n -sP -PE -PA21,23,80,3389')
 # print(result)
+
+
+shark = WireSharkManager()
+printer = pprint.PrettyPrinter(indent=1)
+app = dash.Dash(__name__)
+app.layout = html.Div(
+    html.Div([
+        html.H4('Live network monitor'),
+        dcc.Graph(id='live-update-graph'),
+        dcc.Interval(
+            id='interval-component',
+            interval=10*1000, # in milliseconds
+            n_intervals=1
+        )
+    ])
+)
+
+
+# Multiple components can update everytime interval gets fired.
+@app.callback(Output('live-update-graph', 'figure'),
+              Input('interval-component', 'n_intervals'))
+def update_graph_live(n):
+    lon_points = []
+    lat_points = []
+    cities = []
+
+    # Collect some data
+    for info in shark.get_loc(10):
+        # print("location data")
+        info["data_hash"] = shark.make_hash_sha256(info)
+        printer.pprint(info)
+        lon_points.append(info.get("city_lon") if info.get("city_lon") else info.get("country_lon"))
+        lat_points.append(info.get("city_lat") if info.get("city_lat") else info.get("country_lat"))
+        cities.append(f'{info.get("city_name") if info.get("city_name") else info.get("country_name")+" city undefined"}')
+
+    # Create the graph with subplots
+    fig = go.Figure(go.Scattergeo(
+                    mode="markers",
+                    lon=lon_points,
+                    lat=lat_points,
+                    marker={'size': 8}))
+    fig.update_geos(scope="world", bgcolor="#2b2b2b", projection_type="orthographic", landcolor="black", showocean=True, oceancolor="#5c0000",  showcountries=True, countrycolor="#850000")
+    fig.update_traces(marker_color="#ff0000", marker_symbol="cross", text=cities, selector=dict(type='scattergeo'))
+    fig.update_layout(height=1000, margin={"r":0,"t":0,"l":0,"b":0})
+
+    return fig
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)

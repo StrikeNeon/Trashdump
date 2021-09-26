@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import youtube_dl
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-from os import remove, mkdir, getcwd, path
+from os import remove, getcwd, path
 from youtubesearchpython import CustomSearch, VideoSortOrder
 
 
@@ -63,12 +63,12 @@ def quick_search(query):
     return results
 
 
-try:
-    mkdir("videos")
-except FileExistsError:
-    pass
-results = quick_search("conspiracy")
-for link in results:
-    filename = results.get(link).get("title")
-    quick_load(link, filename) if results.get(link).get("views") < 1000 else None
-# # quick_clip("https://www.youtube.com/watch?v=VFe_7Ra3sJ8", 22, 25)
+# try:
+#     mkdir("videos")
+# except FileExistsError:
+#     pass
+# results = quick_search("conspiracy")
+# for link in results:
+#     filename = results.get(link).get("title")
+#     quick_load(link, filename) if results.get(link).get("views") < 1000 else None
+# # # quick_clip("https://www.youtube.com/watch?v=VFe_7Ra3sJ8", 22, 25)
