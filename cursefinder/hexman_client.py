@@ -14,87 +14,32 @@ class CurseClient:
                  keyword: str, views: int) -> None:
         self._executor = executor
         self._channel = channel
-        self._stub = remote_curse_pb2.HexManStub(keyword, views)
-        self._session_id = None
-        self._audio_session_link = None
-        self._call_state = None
-        self._peer_responded = threading.Event()
-        self._call_finished = threading.Event()
+        self._stub = remote_curse_pb2_grpc.HexManStub(channel)
+        self._keyword = keyword
+        self._views = views
+
         self._consumer_future = None
 
-    def _response_watcher(
-            self,
-            response_iterator: Iterator[remote_curse_pb2.CurseReply]) -> None:
-        try:
-            for response in response_iterator:
-                # NOTE: All fields in Proto3 are optional. This is the recommended way
-                # to check if a field is present or not, or to exam which one-of field is
-                # fulfilled by this message.
-                if response.HasField("call_info"):
-                    self._on_call_info(response.call_info)
-                elif response.HasField("call_state"):
-                    self._on_call_state(response.call_state.state)
-                else:
-                    raise RuntimeError(
-                        "Received StreamCallResponse without call_info and call_state"
-                    )
-        except Exception as e:
-            self._peer_responded.set()
-            raise
-
-    def _on_call_info(self, call_info: remote_curse_pb2.CallInfo) -> None:
-        self._session_id = call_info.session_id
-        self._audio_session_link = call_info.media
-
-    def _on_call_state(self, call_state: remote_curse_pb2.CallState.State) -> None:
-        logging.info("Call toward [%s] enters [%s] state", self._phone_number,
-                     remote_curse_pb2.CallState.State.Name(call_state))
-        self._call_state = call_state
-        if call_state is remote_curse_pb2.CallState.State.ACTIVE:
-            self._peer_responded.set()
-        if call_state is remote_curse_pb2.CallState.State.ENDED:
-            self._peer_responded.set()
-            self._call_finished.set()
-
     def call(self) -> None:
-        request = remote_curse_pb2.StreamCallRequest()
-        request.phone_number = self._phone_number
-        response_iterator = self._stub.StreamCall(iter((request,)))
+        request = remote_curse_pb2.CurseRequest()
+        request.keyword = self._keyword
+        request.views = self._views
+        response_iterator = self._stub.CurseMe(iter((request,)))
         # Instead of consuming the response on current thread, spawn a consumption thread.
-        self._consumer_future = self._executor.submit(self._response_watcher,
-                                                      response_iterator)
-
-    def wait_peer(self) -> None:
-        logging.info("Waiting for peer to connect [%s]...", self._phone_number)
-        self._peer_responded.wait(timeout=None)
-        if self._consumer_future.done():
-            # If the future raises, forwards the exception here
-            self._consumer_future.result()
-        return self._call_state is remote_curse_pb2.CallState.State.ACTIVE
-
-    def audio_session(self) -> None:
-        assert self._audio_session_link is not None
-        logging.info("Consuming audio resource [%s]", self._audio_session_link)
-        self._call_finished.wait(timeout=None)
-        logging.info("Audio session finished [%s]", self._audio_session_link)
+        self._consumer_future = self._executor.submit(response_iterator)
 
 
 def process_call(executor: ThreadPoolExecutor, channel: grpc.Channel,
-                 phone_number: str) -> None:
-    call_maker = CurseClient(executor, channel, phone_number)
+                 keyword: str, views: int) -> None:
+    call_maker = CurseClient(executor, channel, keyword, views)
     call_maker.call()
-    if call_maker.wait_peer():
-        call_maker.audio_session()
-        logging.info("Call finished!")
-    else:
-        logging.info("Call failed: peer didn't answer")
 
 
 def run():
     executor = ThreadPoolExecutor()
     with grpc.insecure_channel("localhost:50051") as channel:
         future = executor.submit(process_call, executor, channel,
-                                 "555-0100-XXXX")
+                                 "alien", 100)
         future.result()
 
 
