@@ -30,19 +30,22 @@ class HexMan(remote_curse_pb2_grpc.HexManServicer):
         self._id_counter = 0
         self._lock = threading.RLock()
 
-
     def CurseMe(
             self, request_iterator: [remote_curse_pb2.CurseRequest],
             context: grpc.ServicerContext) -> Iterable[remote_curse_pb2.CurseReply]:
+        print(request_iterator)
         try:
             mkdir("videos")
         except FileExistsError:
             pass
         results = yt_downloader.quick_search(request_iterator.keyword)
+        print(len(results))
         for link in results:
-            filename = results.get(link)
-            yt_downloader.quick_load(link, filename) if results.get(
+            result = results.get(link)
+            print(link, result)
+            filename = yt_downloader.quick_load(link, result.get("title")) if results.get(
                 link).get("views") < request_iterator.views else None
+            print(filename)
             yield remote_curse_pb2.CurseReply(filename=filename)
 
 
